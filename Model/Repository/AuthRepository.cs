@@ -30,6 +30,11 @@ namespace Model.Repository
                 if (!VerifyPasswordHash(password, user.PasswordHash, user.PasswordSalt))
                     return null;
 
+                user.LastLogin = DateTime.Now;
+
+                _context.Entry(user).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+
                 return user;
             }
             catch (Exception)

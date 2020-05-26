@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Model.Dtos;
 using Model.Entities;
 using Model.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,8 +39,11 @@ namespace Accountant_API.Controllers
 
                 User userToCreate = new User
                 {
+                    Name = userDto.Name,
+                    LastName = userDto.LastName,
                     Dni = userDto.Dni,
-                    Email = userDto.Email
+                    Email = userDto.Email,
+                    LastLogin = DateTime.Now
                 };
 
                 var createdUser = await _repo.Register(userToCreate, userDto.Password);
@@ -76,7 +82,7 @@ namespace Accountant_API.Controllers
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     Subject = new ClaimsIdentity(claims),
-                    Expires = DateTime.Now.AddHours(24),
+                    Expires = DateTime.Now.AddHours(4),
                     SigningCredentials = credentials
                 };
 
