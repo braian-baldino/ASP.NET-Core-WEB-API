@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,9 +12,10 @@ using Model.Interfaces;
 
 namespace Accountant_API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class IncomeController : ControllerBase
+    public class IncomeController : ControllerBase,IToken
     {
         private readonly IIncomeRepository _repository;
 
@@ -25,7 +28,14 @@ namespace Accountant_API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Income>>> GetIncomes()
         {
-            var incomes = await _repository.GetAll();
+            var user = await _repository.ValidUser(GetTokenUserId());
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var incomes = await _repository.GetAll(user.Id);
 
             if (incomes == null)
             {
@@ -39,7 +49,14 @@ namespace Accountant_API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Income>> GetIncome(int id)
         {
-            var income = await _repository.Get(id);
+            var user = await _repository.ValidUser(GetTokenUserId());
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var income = await _repository.Get(id,user.Id);
 
             if (income == null)
             {
@@ -90,8 +107,15 @@ namespace Accountant_API.Controllers
         [HttpPost]
         public async Task<ActionResult<Income>> PostIncome(Income income)
         {
-            
-            if (await _repository.Add(income) == null)
+
+            var user = await _repository.ValidUser(GetTokenUserId());
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (await _repository.Add(income,user.Id) == null)
             {
                 return BadRequest();
             }
@@ -105,7 +129,14 @@ namespace Accountant_API.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<Income>> DeleteIncome(int id)
         {
-            var income = await _repository.Get(id);
+            var user = await _repository.ValidUser(GetTokenUserId());
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var income = await _repository.Get(id,user.Id);
 
             if (income == null)
             {
@@ -118,6 +149,12 @@ namespace Accountant_API.Controllers
             }
 
             return income;
+        }
+
+        public int GetTokenUserId()
+        {
+            //NameIdentifier has the UserId value in the token.
+            return int.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value);
         }
     }
 }

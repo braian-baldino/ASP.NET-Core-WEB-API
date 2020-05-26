@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -11,10 +12,10 @@ using Model.Interfaces;
 
 namespace Accountant_API.Controllers
 {   
-
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class BalanceController : ControllerBase
+    public class BalanceController : ControllerBase,IToken
     {
         private readonly IBalanceRepository _repository;
 
@@ -27,7 +28,19 @@ namespace Accountant_API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Balance>>> GetBalances()
         {
-            var balances = await _repository.GetAll();
+            var user = await _repository.ValidUser(GetTokenUserId());
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if(user == null)
+            {
+                return NotFound();
+            }
+
+            var balances = await _repository.GetAll(user.Id);
 
             if (balances == null)
             {
@@ -41,7 +54,14 @@ namespace Accountant_API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Balance>> GetBalance(int id)
         {
-            var balance = await _repository.Get(id);
+            var user = await _repository.ValidUser(GetTokenUserId());
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var balance = await _repository.Get(id,user.Id);
 
             if (balance == null)
             {
@@ -88,7 +108,7 @@ namespace Accountant_API.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<Balance>> DeleteBalance(int id)
         {
-            var balance = await _repository.Get(id);
+            var balance = await _repository.Get(id,GetTokenUserId());
 
             if (balance == null)
             {
@@ -102,5 +122,12 @@ namespace Accountant_API.Controllers
 
             return balance;
         }
+
+        public int GetTokenUserId()
+        {
+            //NameIdentifier has the UserId value in the token.
+            return int.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value);
+        }
     }
+
 }

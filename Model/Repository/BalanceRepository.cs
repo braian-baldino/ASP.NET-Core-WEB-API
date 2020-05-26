@@ -17,7 +17,7 @@ namespace Model.Repository
             _context = context;
         }
 
-        public async Task<Balance> Add(Balance entity)
+        public async Task<Balance> Add(Balance entity,int userId)
         {
             try
             {
@@ -25,7 +25,8 @@ namespace Model.Repository
                 {
                     return null;
                 }
- 
+
+                entity.UserId = userId;
                 entity.TotalIncomes = 0;
                 entity.TotalSpendings = 0;
                 entity.Result = 0;
@@ -61,7 +62,7 @@ namespace Model.Repository
             }
         }
 
-        public async Task<Balance> Get(int id)
+        public async Task<Balance> Get(int id,int userId)
         {
             try
             {
@@ -71,7 +72,7 @@ namespace Model.Repository
                     .Include(s => s.Spendings)
                     .ThenInclude(c => c.Category)
                     .Include(m => m.Month)
-                    .Where(b => b.Id == id)
+                    .Where(b => b.Id == id && b.UserId == userId)
                     .FirstOrDefaultAsync();
 
                 return balance;
@@ -82,12 +83,13 @@ namespace Model.Repository
             }
         }
 
-        public async Task<List<Balance>> GetAll()
+        public async Task<List<Balance>> GetAll(int userId)
         {
             try
             {
                 var balances = await _context.Balances
                     .Include(m => m.Month)
+                    .Where(b => b.UserId == userId)
                     .OrderBy(b => b.Month.Id)
                     .ToListAsync();
 
@@ -193,6 +195,20 @@ namespace Model.Repository
             catch (Exception)
             {
                 return false;
+            }
+        }
+
+        public async Task<User> ValidUser(int userId)
+        {
+            try
+            {
+                var user = await _context.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
+
+                return user;
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
     }

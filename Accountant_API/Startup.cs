@@ -47,6 +47,10 @@ namespace Accountant_API
             services.AddScoped<ISpendingRepository, SpendingRepository>();
             services.AddScoped<IIncomeRepository, IncomeRepository>();
 
+            //Services
+            services.AddControllers();
+            services.AddCors();
+
             //Validation Scheme
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -59,9 +63,7 @@ namespace Accountant_API
                         ValidateIssuer = false,
                         ValidateAudience = false
                     };
-                });
-
-            services.AddControllers();
+                });          
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -89,13 +91,16 @@ namespace Accountant_API
             //app.UseHttpsRedirection();
 
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
+
+            //Need to be changed for deploy
+            app.UseCors(c => c.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
         }
     }
 }

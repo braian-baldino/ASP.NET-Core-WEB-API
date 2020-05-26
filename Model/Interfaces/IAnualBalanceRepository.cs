@@ -8,7 +8,7 @@ namespace Model.Interfaces
 {
     public interface IAnualBalanceRepository : IBaseRepository<AnualBalance>
     {
-        Task<bool> AddMonths(int anualBalanceId);
-        Task<bool> UniqueYear(int year);
+        Task<bool> AddMonths(int anualBalanceId,int userId);
+        Task<bool> UniqueYear(int userId,int year);
     }
 }

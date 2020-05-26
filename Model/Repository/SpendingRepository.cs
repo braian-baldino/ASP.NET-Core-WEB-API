@@ -20,7 +20,7 @@ namespace Model.Repository
             _balanceRepository = balanceRepository;
         }
 
-        public async Task<Spending> Add(Spending spending)
+        public async Task<Spending> Add(Spending spending,int userId)
         {
             try
             {
@@ -36,6 +36,7 @@ namespace Model.Repository
                     return null;
                 }
 
+                spending.UserId = userId;
                 spending.Category = category;
 
                 await _context.AddAsync(spending);
@@ -70,11 +71,13 @@ namespace Model.Repository
             }
         }
 
-        public async Task<Spending> Get(int id)
+        public async Task<Spending> Get(int id,int userId)
         {
             try
             {
-                var spending = await _context.Spendings.FirstOrDefaultAsync();
+                var spending = await _context.Spendings
+                    .Where(s => s.Id == id && s.UserId == userId)
+                    .FirstOrDefaultAsync();
 
                 return spending;
             }
@@ -84,11 +87,14 @@ namespace Model.Repository
             }
         }
 
-        public async Task<List<Spending>> GetAll()
+        public async Task<List<Spending>> GetAll(int userId)
         {
             try
             {
-                var spending = await _context.Spendings.OrderBy(i => i.Date).ToListAsync();
+                var spending = await _context.Spendings
+                    .Where(s => s.UserId == userId)
+                    .OrderBy(i => i.Date)
+                    .ToListAsync();
 
                 return spending;
             }
@@ -132,6 +138,20 @@ namespace Model.Repository
             try
             {
                 return await _context.SpendingCategories.Where(i => i.Id == spendingTypeId).FirstOrDefaultAsync();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public async Task<User> ValidUser(int userId)
+        {
+            try
+            {
+                var user = await _context.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
+
+                return user;
             }
             catch (Exception)
             {

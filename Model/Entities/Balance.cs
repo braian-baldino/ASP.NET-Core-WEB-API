@@ -8,6 +8,8 @@ namespace Model.Entities
     public class Balance
     {
         public int Id { get; set; }
+        [ForeignKey("User")]
+        public int UserId { get; set; }
         [ForeignKey ("AnualBalance")]
         public int AnualBalanceId { get; set; }
         public Month Month { get; set; }

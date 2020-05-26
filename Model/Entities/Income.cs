@@ -8,6 +8,8 @@ namespace Model.Entities
     public class Income
     {
         public int Id { get; set; }
+        [ForeignKey("User")]
+        public int UserId { get; set; }
         [ForeignKey("Balance")]
         public int BalanceId { get; set; }
         public string Description { get; set; }

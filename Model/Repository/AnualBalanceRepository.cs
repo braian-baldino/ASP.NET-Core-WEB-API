@@ -19,20 +19,26 @@ namespace Model.Repository
             _context = context;
             _balanceRepository = balanceRepository;
         }
-        public async Task<AnualBalance> Add(AnualBalance anualBalance)
+
+        public async Task<AnualBalance> Add(AnualBalance anualBalance,int userId)
         {
             try
             {
+                //Validates model.
                 if (anualBalance == null)
                 {
                     return null;
                 }
-             
-                if(! await UniqueYear(anualBalance.Year))
+
+                //Assign the validated user id to the Anual Balance
+                anualBalance.UserId = userId;
+
+                if(! await UniqueYear(userId,anualBalance.Year))
                 {
                     return null;
                 }
 
+                //Initialize the anual balance result.
                 anualBalance.Result = 0;
 
                 await _context.AddAsync(anualBalance);
@@ -66,7 +72,7 @@ namespace Model.Repository
             }
         }
 
-        public async Task<AnualBalance> Get(int id)
+        public async Task<AnualBalance> Get(int id,int userId)
         {
             try
             {
@@ -77,7 +83,7 @@ namespace Model.Repository
                     .ThenInclude(i => i.Incomes)
                     .Include(b=> b.Balances)
                     .ThenInclude(m => m.Month)
-                    .Where(b => b.Id == id)
+                    .Where(b => b.Id == id && b.UserId == userId)
                     .FirstOrDefaultAsync();
 
                 return anualBalance;
@@ -88,11 +94,12 @@ namespace Model.Repository
             }
         }
 
-        public async Task<List<AnualBalance>> GetAll()
+        public async Task<List<AnualBalance>> GetAll(int userId)
         {
             try
             {
                 var anualBalances = await _context.AnualBalances
+                    .Where(a => a.UserId == userId)
                     .OrderBy(a => a.Year)
                     .ToListAsync();
 
@@ -129,13 +136,13 @@ namespace Model.Repository
         }
 
         //Validates the year is not already created.
-        public async Task<bool> UniqueYear(int year)
+        public async Task<bool> UniqueYear(int userId,int year)
         {
             try
             {
-                var allBalances = await _context.AnualBalances.ToListAsync();
+                var userAnualBalances = await _context.AnualBalances.Where(a => a.UserId == userId).ToListAsync();
 
-                foreach (var item in allBalances)
+                foreach (var item in userAnualBalances)
                 {
                     if (item.Year == year)
                     {
@@ -151,7 +158,7 @@ namespace Model.Repository
             }
         }
 
-        public async Task<bool> AddMonths(int anualBalanceId)
+        public async Task<bool> AddMonths(int anualBalanceId,int userId)
         {
             try
             {
@@ -163,7 +170,7 @@ namespace Model.Repository
                     balance.AnualBalanceId = anualBalanceId;
                     balance.Month = month;
                     
-                    if(await _balanceRepository.Add(balance) == null)
+                    if(await _balanceRepository.Add(balance,userId) == null)
                     {
                         return false;
                     }
@@ -174,6 +181,22 @@ namespace Model.Repository
             catch (Exception)
             {
                 return false;
+            }
+        }
+
+        public async Task<User> ValidUser(int userId)
+        {
+            try
+            {
+                var user = await _context.Users
+                    .Where(u => u.Id == userId)
+                    .FirstOrDefaultAsync();
+
+                return user;
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
     }

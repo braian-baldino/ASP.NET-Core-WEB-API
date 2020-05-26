@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +14,10 @@ using Model.Interfaces;
 
 namespace Accountant_API.Controllers
 {
-
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class AnualBalanceController : ControllerBase
+    public class AnualBalanceController : ControllerBase,IToken
     {
         private readonly IAnualBalanceRepository _repository;
 
@@ -28,7 +30,14 @@ namespace Accountant_API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AnualBalance>>> GetAnualBalances()
         {
-            var anualBalances = await _repository.GetAll();
+            var user = await _repository.ValidUser(GetTokenUserId());
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var anualBalances = await _repository.GetAll(user.Id);
 
             if (anualBalances == null)
             {
@@ -42,7 +51,14 @@ namespace Accountant_API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<AnualBalance>> GetAnualBalance(int id)
         {
-            var anualBalance = await _repository.Get(id);
+            var user = await _repository.ValidUser(GetTokenUserId());
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var anualBalance = await _repository.Get(id, user.Id);
 
             if (anualBalance == null)
             {
@@ -89,28 +105,39 @@ namespace Accountant_API.Controllers
         // To protect from overposting attacks, please enable the specific properties you want to bind to, for
         // more details see https://aka.ms/RazorPagesCRUD.
         [HttpPost]
-        public async Task<ActionResult<AnualBalance>> PostAnualBalance(AnualBalance anualBalance)
+        public async Task<ActionResult<AnualBalance>> PostAnualBalance(AnualBalance entity)
         {
-            var response = await _repository.Add(anualBalance);
+            var user = await _repository.ValidUser(GetTokenUserId());
 
-            if ( response == null)
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var anualBalance = await _repository.Add(entity,user.Id);
+
+            if (anualBalance == null)
             {
                 return BadRequest();
             }
 
-            if(! await _repository.AddMonths(response.Id))
-            {
-                return BadRequest();
-            }
+            await _repository.AddMonths(anualBalance.Id,user.Id);
 
-            return Created("POST",anualBalance);
+            return Created("POST", anualBalance);
         }
 
         // DELETE: api/AnualBalance/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<AnualBalance>> DeleteAnualBalance(int id)
         {
-            var anualBalance = await _repository.Get(id);
+            var user = await _repository.ValidUser(GetTokenUserId());
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var anualBalance = await _repository.Get(id, user.Id);
 
             if (anualBalance == null)
             {
@@ -123,6 +150,12 @@ namespace Accountant_API.Controllers
             }
 
             return anualBalance;
+        }
+
+        public int GetTokenUserId()
+        {
+            //NameIdentifier has the UserId value in the token.
+            return int.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value);
         }
 
     }

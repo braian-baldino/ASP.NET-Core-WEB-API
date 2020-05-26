@@ -10,6 +10,7 @@ namespace Model.Entities
         public int Id { get; set; }
         public string Dni { get; set; }
         public string Email { get; set; }
+        public List<AnualBalance> UserBalances { get; set; } = new List<AnualBalance>();
         public byte[] PasswordHash { get; set; }
         public byte[] PasswordSalt { get; set; }
     }

@@ -21,7 +21,7 @@ namespace Model.Repository
             _balanceRepository = balanceRepository;
         }
 
-        public async Task<Income> Add(Income income)
+        public async Task<Income> Add(Income income,int userId)
         {
             try
             {
@@ -37,6 +37,7 @@ namespace Model.Repository
                     return null;
                 }
 
+                income.UserId = userId;
                 income.Category = category;
 
                 await _context.AddAsync(income);
@@ -71,11 +72,13 @@ namespace Model.Repository
             }
         }
 
-        public async Task<Income> Get(int id)
+        public async Task<Income> Get(int id,int userId)
         {
             try
             {
-                var income = await _context.Incomes.FirstOrDefaultAsync();
+                var income = await _context.Incomes
+                    .Where(i => i.Id == id && i.UserId == userId)
+                    .FirstOrDefaultAsync();
 
                 return income;
             }
@@ -85,11 +88,14 @@ namespace Model.Repository
             }
         }
 
-        public async Task<List<Income>> GetAll()
+        public async Task<List<Income>> GetAll(int userId)
         {
             try
             {
-                var income = await _context.Incomes.OrderBy(i => i.Date).ToListAsync();
+                var income = await _context.Incomes
+                    .Where(i => i.UserId == userId)
+                    .OrderBy(i => i.Date)
+                    .ToListAsync();
 
                 return income;
             }
@@ -133,6 +139,20 @@ namespace Model.Repository
             try
             {
                 return await _context.IncomeCategories.Where(i => i.Id == incomeTypeId).FirstOrDefaultAsync();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public async Task<User> ValidUser(int userId)
+        {
+            try
+            {
+                var user = await _context.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
+
+                return user;
             }
             catch (Exception)
             {
