@@ -12,6 +12,7 @@ namespace Model.Repository
     public class BalanceRepository : IBalanceRepository
     {
         private readonly DataContext _context;
+
         public BalanceRepository(DataContext context)
         {
             _context = context;
@@ -30,6 +31,7 @@ namespace Model.Repository
                 entity.TotalIncomes = 0;
                 entity.TotalSpendings = 0;
                 entity.Result = 0;
+                entity.Positive = true;
 
                 await _context.AddAsync(entity);
                 await _context.SaveChangesAsync();
@@ -166,13 +168,15 @@ namespace Model.Repository
                 var balance = await _context.Balances
                     .Include(i => i.Incomes)
                     .Include(s => s.Spendings)
-                    .Where(b => b.Id == balanceId).FirstOrDefaultAsync();
+                    .Where(b => b.Id == balanceId)
+                    .FirstOrDefaultAsync();
 
                 if(balance == null)
                 {
                     return false;
                 }
 
+                
                 balance.TotalIncomes = 0;
                 balance.TotalSpendings = 0;
 
@@ -187,8 +191,14 @@ namespace Model.Repository
                 }
 
                 balance.Result = balance.TotalIncomes - balance.TotalSpendings;
+                balance.Positive = (balance.Result >= 0) ? true : false;
 
                 await Update(balance);
+
+                if(await CalculateAndSaveAnualBalance(balance) == null)
+                {
+                    return false;
+                }
 
                 return true;
             }
@@ -229,6 +239,42 @@ namespace Model.Repository
                 return null;
             }
         }
+
+        private async Task<AnualBalance> CalculateAndSaveAnualBalance(Balance balance)
+        {
+            try
+            {
+                var anualBalance = await _context.AnualBalances
+                   .Include(a => a.Balances)
+                   .Where(a => a.Id == balance.AnualBalanceId && a.UserId == balance.UserId)
+                   .FirstOrDefaultAsync();
+
+                if (anualBalance == null)
+                {
+                    return null;
+                }
+
+                anualBalance.Result = 0;
+
+                foreach (Balance item in anualBalance.Balances)
+                {
+                    anualBalance.Result += item.Result;
+                }
+
+                anualBalance.Positive = (anualBalance.Result >= 0) ? true : false;
+
+                _context.Entry(anualBalance).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+
+                return anualBalance;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+
     }
 
     

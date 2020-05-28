@@ -40,6 +40,7 @@ namespace Model.Repository
 
                 //Initialize the anual balance result.
                 anualBalance.Result = 0;
+                anualBalance.Positive = true;
 
                 await _context.AddAsync(anualBalance);
                 await _context.SaveChangesAsync();

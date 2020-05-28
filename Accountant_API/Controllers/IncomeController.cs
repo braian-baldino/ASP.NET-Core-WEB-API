@@ -122,7 +122,7 @@ namespace Accountant_API.Controllers
 
             await _repository.UpdateBalance(income.BalanceId);
 
-            return CreatedAtAction("POST", income);
+            return StatusCode(201);
         }
 
         // DELETE: api/Income/5
