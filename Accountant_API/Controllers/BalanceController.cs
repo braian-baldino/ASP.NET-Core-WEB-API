@@ -35,12 +35,29 @@ namespace Accountant_API.Controllers
                 return NotFound();
             }
 
-            if(user == null)
+            var balances = await _repository.GetAll(user.Id);
+
+            if (balances == null)
             {
                 return NotFound();
             }
 
-            var balances = await _repository.GetAll(user.Id);
+            return Ok(balances);
+        }
+
+        // GET: api/Balance
+        [HttpGet]
+        [Route("GetBalancesFromYear/{anualBalanceId}")]
+        public async Task<ActionResult<IEnumerable<Balance>>> GetBalancesFromAnualBalance(int anualBalanceId)
+        {
+            var user = await _repository.ValidUser(GetTokenUserId());
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var balances = await _repository.BalancesFromYear(anualBalanceId,user.Id);
 
             if (balances == null)
             {
@@ -102,25 +119,6 @@ namespace Accountant_API.Controllers
                     return BadRequest();
                 }
             }
-        }
-
-        // DELETE: api/Balance/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<Balance>> DeleteBalance(int id)
-        {
-            var balance = await _repository.Get(id,GetTokenUserId());
-
-            if (balance == null)
-            {
-                return NotFound();
-            }
-
-            if (await _repository.Delete(id) == null)
-            {
-                return BadRequest();
-            }
-
-            return balance;
         }
 
         public int GetTokenUserId()

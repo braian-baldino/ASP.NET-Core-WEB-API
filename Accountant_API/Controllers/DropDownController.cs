@@ -24,9 +24,53 @@ namespace Accountant_API.Controllers
             _context = context;
         }
 
-        //Months
-        //Spending Categories
-        //Income Categories
+        //Api/DropDown/GetMonthList
+        [HttpGet]
+        [Route("GetMonthList")]
+        public async Task<ActionResult<IEnumerable<Month>>> GetMonthList()
+        {
+            try
+            {
+                return await _context.Months.OrderBy(m => m.Id).ToListAsync();
+            }
+            catch (Exception)
+            {
+
+                return StatusCode(500, "Month List Not Available");
+            }
+        }
+
+        //Api/DropDown/GetSpendingCategories
+        [HttpGet]
+        [Route("GetSpendingCategories")]
+        public async Task<ActionResult<IEnumerable<SpendingType>>> GetSpendingCategories()
+        {
+            try
+            {
+                return await _context.SpendingCategories.OrderBy(c => c.Name).ToListAsync();
+            }
+            catch (Exception)
+            {
+
+                return StatusCode(500, "Categories Not Available");
+            }
+        }
+
+        //Api/DropDown/GetIncomeCategories
+        [HttpGet]
+        [Route("GetIncomeCategories")]
+        public async Task<ActionResult<IEnumerable<IncomeType>>> GetIncomeCategories()
+        {
+            try
+            {
+                return await _context.IncomeCategories.OrderBy(c => c.Name).ToListAsync();
+            }
+            catch (Exception)
+            {
+
+                return StatusCode(500, "Categories Not Available");
+            }
+        }
 
     }
 }

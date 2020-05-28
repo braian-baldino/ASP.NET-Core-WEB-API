@@ -211,6 +211,24 @@ namespace Model.Repository
                 return null;
             }
         }
+
+        public async Task<List<Balance>> BalancesFromYear(int anualBalanceId, int userId)
+        {
+            try
+            {
+                var balancesFromYear = await _context.Balances
+                    .Where(b => b.AnualBalanceId == anualBalanceId && b.UserId == userId)
+                    .Include(m => m.Month)
+                    .OrderBy(m => m.Id)
+                    .ToListAsync();
+
+                return balancesFromYear;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
     }
 
     
